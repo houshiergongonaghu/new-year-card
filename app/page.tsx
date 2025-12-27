@@ -10,9 +10,6 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Dices, Sparkles, Send, Upload, Loader2 } from "lucide-react"
 import { drawCardToCanvas } from "@/lib/canvas-utils"
 
-// 添加Google Fonts
-import Head from "next/head"
-
 const illustrations = [
   "/watercolor-bunny-in-winter-scene.jpg",
   "/vintage-cardinal-bird-on-snowy-branch.jpg",
@@ -38,7 +35,8 @@ export default function HolidayCardGenerator() {
   const [cardError, setCardError] = useState('')
   const [finalCardUrl, setFinalCardUrl] = useState<string | null>(null)
 
-  if (typeof window !== "undefined" && import.meta.hot) {
+  // 页面加载时打印日志
+  if (typeof window !== "undefined") {
     console.log("[HolidayCardGenerator] 页面组件已加载,当前图片索引:", currentIllustration)
   }
 
@@ -62,10 +60,88 @@ export default function HolidayCardGenerator() {
     setCurrentIllustration(0)
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    console.log("[handleSubmit] 表单提交成功,数据:", JSON.stringify(formData, null, 2))
-    alert("Card sent with love! 💌")
+    console.log("[handleSubmit] 开始发送贺卡流程...")
+
+    // 验证所需数据
+    if (!formData.yourName || !formData.recipientName || !formData.recipientEmail || !formData.message) {
+      alert('请填写完整的贺卡信息（包括收件人邮箱）')
+      return
+    }
+
+    if (!finalCardUrl) {
+      alert('请先点击"生成贺卡"按钮创建贺卡')
+      return
+    }
+
+    try {
+      console.log('[SendCard] 第一步: 保存贺卡到数据库...')
+
+      // 1. 保存到数据库
+      const saveResponse = await fetch('/api/save/card', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          senderName: formData.yourName,
+          recipientName: formData.recipientName,
+          recipientEmail: formData.recipientEmail,
+          message: formData.message,
+          imageUrl: finalCardUrl,
+        }),
+      })
+
+      const saveResult = await saveResponse.json()
+      console.log('[SendCard] 数据库保存结果:', saveResult)
+
+      if (!saveResult.success) {
+        alert('保存贺卡失败: ' + (saveResult.message || '未知错误'))
+        return
+      }
+
+      const cardId = saveResult.data.cardId
+      console.log('[SendCard] 贺卡ID:', cardId)
+
+      // 2. 生成查看链接
+      const cardUrl = `${window.location.origin}/card/${cardId}`
+      console.log('[SendCard] 贺卡链接:', cardUrl)
+
+      console.log('[SendCard] 第二步: 发送邮件通知...')
+
+      // 3. 发送邮件
+      const emailResponse = await fetch('/api/send/email', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          recipientName: formData.recipientName,
+          recipientEmail: formData.recipientEmail,
+          senderName: formData.yourName,
+          cardUrl: cardUrl,
+        }),
+      })
+
+      const emailResult = await emailResponse.json()
+      console.log('[SendCard] 邮件发送结果:', emailResult)
+
+      if (!emailResult.success) {
+        alert('邮件发送失败: ' + (emailResult.message || '未知错误'))
+        return
+      }
+
+      console.log('[SendCard] 贺卡发送成功!')
+      alert(`贺卡发送成功! 🎉\n\n${formData.recipientName} (${formData.recipientEmail}) 将收到一封包含贺卡链接的邮件。`)
+
+      // 可选: 清空表单
+      // startOver()
+
+    } catch (error) {
+      console.error('[SendCard] 发送失败:', error)
+      alert('发送失败，请稍后重试')
+    }
   }
   
   const handleCreateCard = async () => {

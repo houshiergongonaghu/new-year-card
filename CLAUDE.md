@@ -29,7 +29,7 @@ npm start
 - **Fonts**: Google Fonts (Great Vibes/Caveat for handwritten text, Inter for UI); current UI uses Playfair Display + Geist (from v0)
 - **Backend**: Supabase (Postgres + Storage)
 - **AI**: Replicate API (img2img model; version configured in `app/api/generate/route.ts`)
-- **Email**: Resend
+- **Email**: Resend (using test domain `onboarding@resend.dev` for Phase 6)
 
 ## Database Schema
 
@@ -53,6 +53,14 @@ npm start
 3. **Storage**: Supabase Storage bucket "cards" for uploaded images
 4. **Email Delivery**: Resend API with personalized viewing links (/card/[id])
 5. **Viral CTA**: "我也要做一张" button on viewing pages linking back to homepage
+
+## Email Configuration
+
+**Resend Test Domain (Phase 6)**: Using `onboarding@resend.dev` to bypass domain verification.
+
+**Production Options**:
+- Option B: Verify your own domain at https://resend.com/domains
+- Option C: Purchase a domain from Resend
 
 ## Repo Notes (Current)
 
@@ -79,6 +87,7 @@ npm start
 - Installed `@supabase/supabase-js` and stored Supabase/Replicate env vars in `.env.local`.
 - Added placeholder public assets and icons required by the UI.
 - Added `generation_logs` table/index in Supabase and stored the SQL in `setup.sql`.
+- **Phase 6 Complete**: Implemented `/api/save/card` and `/api/send/email` APIs with Resend integration. Used `onboarding@resend.dev` test domain (方案A) to bypass domain verification requirement.
 
 ## Environment Variables
 

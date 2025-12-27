@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run dev:*)",
+      "Bash(netstat:*)",
+      "Bash(findstr:*)",
+      "Bash(findstr /i \"listening\":*)",
+      "Bash(timeout /t 10:*)",
+      "Bash(tasklist:*)",
+      "Bash(curl:*)",
+      "Bash(node debug-email.js:*)",
+      "Bash(node -e \"console.log\\(''RESEND_API_KEY:'', process.env.RESEND_API_KEY ? ''Set'' : ''Not set''\\)\":*)",
+      "Bash(git add:*)"
+    ]
+  }
+}
