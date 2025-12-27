@@ -8,6 +8,10 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent } from "@/components/ui/card"
 import { Dices, Sparkles, Send, Upload, Loader2 } from "lucide-react"
+import { drawCardToCanvas } from "@/lib/canvas-utils"
+
+// 添加Google Fonts
+import Head from "next/head"
 
 const illustrations = [
   "/watercolor-bunny-in-winter-scene.jpg",
@@ -29,7 +33,10 @@ export default function HolidayCardGenerator() {
   const [uploadedImage, setUploadedImage] = useState<File | null>(null)
   const [generatedImage, setGeneratedImage] = useState<string | null>(null)
   const [isGenerating, setIsGenerating] = useState(false)
+  const [isCreatingCard, setIsCreatingCard] = useState(false)
   const [aiError, setAiError] = useState('')
+  const [cardError, setCardError] = useState('')
+  const [finalCardUrl, setFinalCardUrl] = useState<string | null>(null)
 
   if (typeof window !== "undefined" && import.meta.hot) {
     console.log("[HolidayCardGenerator] 页面组件已加载,当前图片索引:", currentIllustration)
@@ -59,6 +66,68 @@ export default function HolidayCardGenerator() {
     e.preventDefault()
     console.log("[handleSubmit] 表单提交成功,数据:", JSON.stringify(formData, null, 2))
     alert("Card sent with love! 💌")
+  }
+  
+  const handleCreateCard = async () => {
+    if (!formData.yourName || !formData.recipientName || !formData.message) {
+      setCardError('请填写完整的发送人、收件人和祝福语')
+      return
+    }
+    
+    if (!generatedImage && !uploadedImage) {
+      setCardError('请先生成AI图片或上传图片')
+      return
+    }
+    
+    setIsCreatingCard(true)
+    setCardError('')
+    setFinalCardUrl(null)
+    
+    console.log('[CreateCard] 开始创建贺卡...')
+    
+    try {
+      // 使用生成的图片或上传的图片
+      const imageToUse = generatedImage || (
+        uploadedImage ? URL.createObjectURL(uploadedImage) : illustrations[currentIllustration]
+      )
+      
+      console.log('[CreateCard] 使用图片:', imageToUse)
+      
+      // 1. Canvas绘制
+      const canvasDataUrl = await drawCardToCanvas(
+        imageToUse,
+        formData.yourName,
+        formData.recipientName,
+        formData.message
+      )
+      
+      console.log('[CreateCard] Canvas绘制完成')
+      
+      // 2. 上传到Supabase
+      const response = await fetch('/api/upload', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ image: canvasDataUrl }),
+      })
+      
+      const result = await response.json()
+      
+      if (result.success) {
+        setFinalCardUrl(result.data.imageUrl)
+        console.log('[CreateCard] 上传成功:', result.data.imageUrl)
+        alert('贺卡创建成功!可以在数据库中保存了')
+      } else {
+        setCardError(result.message || '上传失败')
+        console.error('[CreateCard] 上传失败:', result)
+      }
+    } catch (error) {
+      console.error('[CreateCard] 错误:', error)
+      setCardError('创建贺卡失败，请重试')
+    } finally {
+      setIsCreatingCard(false)
+    }
   }
 
   return (
@@ -279,6 +348,26 @@ export default function HolidayCardGenerator() {
                     />
                   </div>
 
+                  {/* Create Card Button */}
+                  <Button
+                    type="button"
+                    onClick={handleCreateCard}
+                    className="w-full rounded-full bg-[#8B9B87] hover:bg-[#6F7F6B] text-white font-semibold text-lg py-6 mb-4"
+                    disabled={isCreatingCard}
+                  >
+                    {isCreatingCard ? (
+                      <>
+                        <Loader2 className="mr-2 h-5 w-4 animate-spin" />
+                        创建贺卡中...
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="mr-2 h-5 w-5" />
+                        生成贺卡
+                      </>
+                    )}
+                  </Button>
+
                   {/* Send Button */}
                   <Button
                     type="submit"
@@ -287,6 +376,10 @@ export default function HolidayCardGenerator() {
                     <Send className="mr-2 h-5 w-5" />
                     Send with Love
                   </Button>
+                  
+                  {cardError && (
+                    <div className="text-red-600 text-sm text-center mt-3">{cardError}</div>
+                  )}
                 </CardContent>
               </Card>
             </div>
