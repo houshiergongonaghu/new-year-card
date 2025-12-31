@@ -121,7 +121,54 @@ export async function POST(request: Request) {
     }
     
     const imageBuffer = Buffer.from(await imageFile.arrayBuffer())
-    const imageBase64 = `data:${imageFile.type};base64,${imageBuffer.toString('base64')}`
+    const mimeType = imageFile.type || 'image/jpeg'
+    const extFromMime: Record<string, string> = {
+      'image/jpeg': 'jpg',
+      'image/png': 'png',
+      'image/webp': 'webp',
+    }
+    const nameExt = imageFile.name?.split('.').pop()?.toLowerCase()
+    const fileExt = extFromMime[mimeType] || (nameExt === 'jpeg' ? 'jpg' : nameExt) || 'jpg'
+    const inputFilename = `inputs/${Date.now()}-${Math.random().toString(36).slice(2, 10)}.${fileExt}`
+
+    console.log('[上传原图] 开始上传到 Supabase:', inputFilename)
+    const { error: inputUploadError } = await supabase
+      .storage
+      .from('cards')
+      .upload(inputFilename, imageBuffer, {
+        contentType: mimeType,
+        upsert: false,
+      })
+
+    if (inputUploadError) {
+      console.error('[上传原图] 失败:', inputUploadError)
+      return NextResponse.json(
+        {
+          success: false,
+          message: '原图上传失败',
+          error: inputUploadError.message,
+        },
+        { status: 500 }
+      )
+    }
+
+    const { data: inputUrlData } = supabase
+      .storage
+      .from('cards')
+      .getPublicUrl(inputFilename)
+    const inputImageUrl = inputUrlData.publicUrl
+
+    if (!inputImageUrl) {
+      console.error('[上传原图] 未获取到公开 URL')
+      return NextResponse.json(
+        {
+          success: false,
+          message: '原图链接获取失败',
+          error: 'MISSING_INPUT_URL',
+        },
+        { status: 500 }
+      )
+    }
     
     const replicateToken = process.env.REPLICATE_API_TOKEN
     if (!replicateToken) {
@@ -138,25 +185,26 @@ export async function POST(request: Request) {
     
     console.log('[Replicate] 开始调用AI生成...')
     
-    const response = await fetch('https://api.replicate.com/v1/predictions', {
+    const response = await fetch(
+      'https://api.replicate.com/v1/models/black-forest-labs/flux-kontext-pro/predictions',
+      {
       method: 'POST',
       headers: {
         'Authorization': `Token ${replicateToken}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        version: 'ddd4eb440853a42c055203289a3da0c8886b0b9492fe619b1c1dbd34be160ce7',
         input: {
-          image: imageBase64,
-          prompt: 'Watercolor Christmas illustration style, festive, warm, masterpiece, serene winter scene',
-          scheduler: 'DPMSolverMultistep',
-          num_outputs: 1,
-          guidance_scale: 7.5,
-          prompt_strength: 0.7,
-          num_inference_steps: 25,
+          prompt: 'cute warm Chinese New Year illustration, cozy atmosphere, soft colors, adorable characters, festive decorations',
+          input_image: inputImageUrl,
+          aspect_ratio: 'match_input_image',
+          output_format: 'jpg',
+          safety_tolerance: 2,
+          prompt_upsampling: false,
         }
       })
-    })
+    }
+    )
     
     const createBodyText = await response.text()
     let prediction: any = null

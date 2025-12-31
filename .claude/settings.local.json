@@ -10,7 +10,8 @@
       "Bash(curl:*)",
       "Bash(node debug-email.js:*)",
       "Bash(node -e \"console.log\\(''RESEND_API_KEY:'', process.env.RESEND_API_KEY ? ''Set'' : ''Not set''\\)\":*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nPhase 6 完成: 数据存储与邮件发送\n\n- 创建存储元数据 API \\(`/api/save/card`\\)\n- 集成 Resend API 用于邮件发送 \\(`/api/send/email`\\)\n- 实现邮件 HTML 模板，包含贺卡预览和 CTA 按钮\n- 前端集成：app/page.tsx 中实现 handleSubmit 函数\n- 使用 Resend 测试域名 onboarding@resend.dev（方案A）\n- 添加 Phase 6 验证文档\n- 更新任务清单和 CLAUDE.md 文档\nEOF\n\\)\")"
     ]
   }
 }
