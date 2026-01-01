@@ -1,10 +1,9 @@
-import { createClient } from '@supabase/supabase-js'
+﻿import { createClient } from '@supabase/supabase-js'
 import Image from 'next/image'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Sparkles } from 'lucide-react'
 
-// Types
 interface Card {
   id: string
   image_url: string
@@ -74,7 +73,7 @@ export default async function CardViewPage({
 
         {/* Card Image */}
         <div className="mb-8">
-          <div className="relative mx-auto max-w-2xl">
+          <div className="relative mx-auto max-w-2xl group">
             <Image
               src={card.image_url}
               alt={`${card.sender_name} 给 ${card.recipient_name} 的贺卡`}
@@ -83,6 +82,13 @@ export default async function CardViewPage({
               className="w-full h-auto rounded-2xl shadow-2xl"
               priority
             />
+            <a
+              href={card.image_url}
+              download
+              className="absolute right-3 bottom-3 rounded-md bg-black/70 text-white px-2.5 py-1.5 text-xs opacity-0 group-hover:opacity-100 transition-opacity duration-150 hover:bg-black/80 focus:outline-none focus:ring-2 focus:ring-white/70"
+            >
+              下载
+            </a>
           </div>
         </div>
 
@@ -98,12 +104,8 @@ export default async function CardViewPage({
 
         {/* CTA Section */}
         <div className="text-center bg-white rounded-2xl border-2 border-[#E5DCC8] p-8">
-          <h2 className="font-serif text-2xl font-bold text-[#8B9B87] mb-4">
-            感动了吗？
-          </h2>
-          <p className="text-[#6B8E5A] mb-6">
-            为你的朋友也制作一张专属贺卡吧！
-          </p>
+          <h2 className="font-serif text-2xl font-bold text-[#8B9B87] mb-4">心动了吗？</h2>
+          <p className="text-[#6B8E5A] mb-6">也为你的 TA 做一张专属贺卡吧。</p>
           <Link href="/">
             <Button className="rounded-full bg-gradient-to-r from-[#8B9B87] to-[#6B8E5A] hover:from-[#6B8E5A] hover:to-[#5A7A4A] text-white font-semibold text-lg py-6 px-8">
               <Sparkles className="mr-2 h-5 w-5" />
@@ -115,7 +117,9 @@ export default async function CardViewPage({
         {/* Footer */}
         <footer className="mt-12 text-center">
           <p className="font-serif text-sm text-[#8B9B87] italic">Made with love ✨</p>
-          <p className="text-xs text-[#8B9B87]/60 mt-2">贺卡生成于 {new Date(card.created_at).toLocaleString('zh-CN')}</p>
+          <p className="text-xs text-[#8B9B87]/60 mt-2">
+            贺卡生成于 {new Date(card.created_at).toLocaleString('zh-CN')}
+          </p>
         </footer>
       </div>
     </div>

@@ -13,7 +13,7 @@
       return
     }
 
-    // Dynamic canvas size: keep aspect ratio, cap longest side
+    // Max dimensions while keeping aspect
     const MAX_W = 900
     const MAX_H = 900
 
@@ -22,6 +22,7 @@
 
     img.onload = () => {
       try {
+        // Scale canvas to image ratio (cap to MAX)
         const scale = Math.min(MAX_W / img.width, MAX_H / img.height, 1)
         const drawW = Math.round(img.width * scale)
         const drawH = Math.round(img.height * scale)
@@ -29,69 +30,99 @@
         canvas.width = drawW
         canvas.height = drawH
 
-        // 1. Background image (keep aspect ratio)
-        ctx.drawImage(img, 0, 0, drawW, drawH)
+        // Padding and layout
+        const pad = Math.round(Math.min(drawW, drawH) * 0.02)
+        const contentW = drawW - pad * 2
+        const contentH = drawH - pad * 2
+        const topH = contentH * 0.82
+        const bottomH = contentH - topH
+        // 额外预留顶部空隙，避免文字紧贴图片
+        const extraTop = Math.max(Math.round(Math.min(drawW, drawH) * 0.05), pad * 2)
+        const topY = pad + extraTop
+        const bottomY = pad + topH
 
-        // 2. Title
-        ctx.font = `bold ${Math.round(drawH * 0.09)}px "Great Vibes", cursive`
+        // Background
+        ctx.fillStyle = '#FFFFFF'
+        ctx.fillRect(0, 0, drawW, drawH)
+
+        // Main image (top area, centered, keep aspect)
+        const imgScale = Math.min(contentW / img.width, topH / img.height)
+        const scaledW = img.width * imgScale
+        const scaledH = img.height * imgScale
+        const imgX = pad + (contentW - scaledW) / 2
+        const gapTop = Math.min(pad * 2.5, Math.max(0, topH - scaledH) * 0.6)
+        const imgY = topY + gapTop + Math.max(0, (topH - gapTop - scaledH) / 2)
+        ctx.drawImage(img, imgX, imgY, scaledW, scaledH)
+
+        // Bottom area
+        ctx.fillStyle = '#F5F1E8'
+        ctx.fillRect(pad, bottomY, contentW, bottomH)
+
+        // Subtle separator line
+        ctx.strokeStyle = 'rgba(0,0,0,0.08)'
+        ctx.lineWidth = 1
+        ctx.beginPath()
+        ctx.moveTo(pad, bottomY)
+        ctx.lineTo(drawW - pad, bottomY)
+        ctx.stroke()
+
+        // Border
+        ctx.strokeStyle = 'rgba(196,154,108,0.6)' // soft gold
+        ctx.lineWidth = 1.5
+        ctx.strokeRect(pad / 2, pad / 2, drawW - pad, drawH - pad)
+
+        // Text styles
+        const deepRed = '#8B1A1A'
+        const maxTextWidth = contentW * 0.9
+
+        // Helper to fit text width
+        const fitFont = (text: string, basePx: number, family: string) => {
+          let size = basePx
+          ctx.font = `${Math.round(size)}px ${family}`
+          while (ctx.measureText(text).width > maxTextWidth && size > basePx * 0.55) {
+            size -= 1
+            ctx.font = `${Math.round(size)}px ${family}`
+          }
+          return ctx.font
+        }
+
+        // Main greeting
+        ctx.fillStyle = deepRed
         ctx.textAlign = 'center'
         ctx.textBaseline = 'middle'
-        ctx.strokeStyle = 'rgba(255, 255, 255, 0.95)'
-        ctx.lineWidth = Math.max(2, Math.round(drawH * 0.008))
-        const titleY = drawH * 0.12
-        ctx.strokeText("Season's Greetings", drawW / 2, titleY)
-        ctx.fillStyle = '#8B4513'
-        ctx.fillText("Season's Greetings", drawW / 2, titleY)
+        ctx.font = fitFont('Happy New Year 2026', bottomH * 0.18, '"Great Vibes", cursive')
+        ctx.fillText('Happy New Year 2026', pad + contentW / 2, bottomY + bottomH * 0.42)
 
-        // 3. Message (auto wrap)
-        ctx.fillStyle = '#FFFFFF'
-        ctx.font = `${Math.round(drawH * 0.055)}px "Caveat", cursive`
-        ctx.textAlign = 'center'
-        ctx.strokeStyle = '#8B4513'
-        ctx.lineWidth = Math.max(1.5, Math.round(drawH * 0.004))
-
-        const maxWidth = drawW - drawW * 0.12
-        const lineHeight = Math.round(drawH * 0.065)
-        const words = message.split(' ')
-        let line = ''
-        let y = drawH * 0.45
-
-        for (let n = 0; n < words.length; n++) {
-          const testLine = line + words[n] + ' '
-          const metrics = ctx.measureText(testLine)
-
-          if (metrics.width > maxWidth && n > 0) {
-            ctx.strokeText(line, drawW / 2, y)
-            ctx.fillText(line, drawW / 2, y)
-            line = words[n] + ' '
-            y += lineHeight
-          } else {
-            line = testLine
-          }
+        // Custom message (optional)
+        if (message) {
+          ctx.font = fitFont(message, bottomH * 0.12, '"Caveat", cursive')
+          ctx.fillText(message, pad + contentW / 2, bottomY + bottomH * 0.63)
         }
-        ctx.strokeText(line, drawW / 2, y)
-        ctx.fillText(line, drawW / 2, y)
 
-        // 4. Sender
-        ctx.fillStyle = '#FFFFFF'
-        ctx.font = `${Math.round(drawH * 0.05)}px "Caveat", cursive`
+        // Recipient (upper-left, above the image area)
+        // "Dear ..." 放在上方留白区，并加浅底避免被背景淹没
+        const dearText = `Dear ${recipientName},`
+        ctx.font = fitFont(dearText, bottomH * 0.14, '"Georgia", serif')
+        ctx.textAlign = 'left'
+        const dearX = pad + contentW * 0.03
+        const dearY = pad * 1.8
+        const dearMetrics = ctx.measureText(dearText)
+        const dearHeight = dearMetrics.actualBoundingBoxAscent + dearMetrics.actualBoundingBoxDescent
+        ctx.fillStyle = 'rgba(255,255,255,0.8)'
+        ctx.fillRect(
+          dearX - pad * 0.3,
+          dearY - dearHeight,
+          dearMetrics.width + pad * 0.6,
+          dearHeight + pad * 0.4
+        )
+        ctx.fillStyle = deepRed
+        ctx.fillText(dearText, dearX, dearY)
+
+        // Sender (lower-right, italic)
+        ctx.font = fitFont(`With warm wishes, ${senderName}`, bottomH * 0.12, '"Georgia", serif')
         ctx.textAlign = 'right'
-        ctx.strokeStyle = '#8B4513'
-        ctx.lineWidth = Math.max(1.5, Math.round(drawH * 0.004))
-        ctx.strokeText(`— ${senderName}`, drawW - drawW * 0.06, drawH - drawH * 0.07)
-        ctx.fillText(`— ${senderName}`, drawW - drawW * 0.06, drawH - drawH * 0.07)
+        ctx.fillText(`With warm wishes, ${senderName}`, pad + contentW * 0.97, bottomY + bottomH * 0.9)
 
-        // 5. Recipient
-        ctx.fillStyle = '#FFFFFF'
-        ctx.font = `${Math.round(drawH * 0.065)}px "Great Vibes", cursive`
-        ctx.textAlign = 'center'
-        ctx.strokeStyle = '#8B4513'
-        ctx.lineWidth = Math.max(1.5, Math.round(drawH * 0.004))
-        const toY = drawH - drawH * 0.18
-        ctx.strokeText(`To ${recipientName}`, drawW / 2, toY)
-        ctx.fillText(`To ${recipientName}`, drawW / 2, toY)
-
-        // 6. Export
         const dataURL = canvas.toDataURL('image/jpeg', 0.9)
         resolve(dataURL)
       } catch (error) {
