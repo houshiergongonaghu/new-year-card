@@ -348,6 +348,15 @@ export default function HolidayCardGenerator() {
                   </div>
                 </CardContent>
               </Card>
+              <div className="mt-6 flex justify-start">
+                <div className="rounded-2xl bg-white/90 p-3 shadow-lg ring-1 ring-black/5 ml-[150px]">
+                  <img
+                    src="/微信图片_20260102181924.jpg"
+                    alt="Support QR code"
+                    className="h-[130px] w-[130px] rounded-xl object-cover"
+                  />
+                </div>
+              </div>
             </div>
 
             {/* Right Column - Form */}
