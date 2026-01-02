@@ -1,15 +1,13 @@
-import { NextResponse } from 'next/server'
+﻿import { NextResponse } from 'next/server'
 import { Resend } from 'resend'
 import { z } from 'zod'
 
-// 初始化 Resend
 const resend = new Resend(process.env.RESEND_API_KEY)
 
-// 验证输入数据
 const sendEmailSchema = z.object({
   recipientName: z.string().min(1, '收件人姓名不能为空'),
   recipientEmail: z.string().email('邮箱格式不正确'),
-  senderName: z.string().min(1, '发送人姓名不能为空'),
+  senderName: z.string().min(1, '发件人姓名不能为空'),
   cardUrl: z.string().url('贺卡链接格式不正确'),
 })
 
@@ -18,9 +16,8 @@ export async function POST(request: Request) {
     console.log('\n=== [POST /api/send/email] 开始发送邮件 ===')
 
     const body = await request.json()
-    console.log('[SendEmail] 接收数据:', { ...body, recipientEmail: '***@**.com' }) // 脱敏处理
+    console.log('[SendEmail] 接收数据:', { ...body, recipientEmail: '***@**.com' })
 
-    // 验证数据
     const validation = sendEmailSchema.safeParse(body)
 
     if (!validation.success) {
@@ -37,10 +34,8 @@ export async function POST(request: Request) {
 
     const { recipientName, recipientEmail, senderName, cardUrl } = validation.data
 
-    // 邮件主题
     const subject = `${senderName} 为你制作了一张专属贺卡`
 
-    // 邮件 HTML 内容
     const html = `
       <!DOCTYPE html>
       <html>
@@ -137,8 +132,8 @@ export async function POST(request: Request) {
           </div>
 
           <div class="message">
-            <p><strong>亲爱的 ${recipientName}:</strong></p>
-            <p>${senderName} 为你精心制作了一张专属贺卡，点击下面的按钮查看完整内容。</p>
+            <p><strong>亲爱的 ${recipientName}：</strong></p>
+            <p>${senderName} 为你精心制作了一张专属贺卡，点击下方按钮查看完整内容。</p>
           </div>
 
           <div class="cta">
@@ -157,12 +152,11 @@ export async function POST(request: Request) {
     console.log('[SendEmail] 准备发送邮件给:', recipientEmail)
     console.log('[SendEmail] 邮件主题:', subject)
 
-    // 发送邮件
     const { data, error } = await resend.emails.send({
-      from: '节日贺卡生成器 <onboarding@resend.dev>', // 使用Resend测试域名（方案A）
+      from: 'WishMint AI <noreply@wishmintai.com>',
       to: recipientEmail,
-      subject: subject,
-      html: html,
+      subject,
+      html,
     })
 
     if (error) {
