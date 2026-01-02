@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server'
+﻿import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 
 const supabase = createClient(
@@ -24,7 +24,7 @@ function getClientIP(request: Request): string {
 }
 
 async function checkRateLimit(ip: string): Promise<boolean> {
-  console.log(`[限流检查] IP: ${ip}`)
+  console.log(`[闄愭祦妫€鏌 IP: ${ip}`)
   
   const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
   
@@ -35,30 +35,30 @@ async function checkRateLimit(ip: string): Promise<boolean> {
     .gte('created_at', twentyFourHoursAgo)
   
   if (error) {
-    console.error(`[限流错误] ${error.message}`)
+    console.error(`[闄愭祦閿欒] ${error.message}`)
     return true
   }
   
   const count = data?.length || 0
-  console.log(`[限流结果] 24小时内已生成 ${count}/2 次`)
+  console.log(`[闄愭祦缁撴灉] 24灏忔椂鍐呭凡鐢熸垚 ${count}/5 娆)
   
-  return count < 2
+  return count < 5
 }
 
 export async function POST(request: Request) {
   try {
-    console.log('\n=== [POST /api/generate] 请求开始 ===')
+    console.log('\n=== [POST /api/generate] 璇锋眰寮€濮?===')
     
     const ip = getClientIP(request)
     console.log(`[IP] ${ip}`)
     
     const allowed = await checkRateLimit(ip)
     if (!allowed) {
-      console.log(`[限流] IP ${ip} 已达到24小时限制`)
+      console.log(`[闄愭祦] IP ${ip} 宸茶揪鍒?4灏忔椂闄愬埗`)
       return NextResponse.json(
         {
           success: false,
-          message: '每个IP每24小时最多生成2张图片',
+          message: '姣忎釜IP姣?4灏忔椂鏈€澶氱敓鎴?寮犲浘鐗?,
           error: 'RATE_LIMIT_EXCEEDED'
         },
         { status: 429 }
@@ -69,33 +69,33 @@ export async function POST(request: Request) {
     const imageFile = formData.get('image') as File
     
     if (!imageFile) {
-      console.log('[参数错误] 缺少图片文件')
+      console.log('[鍙傛暟閿欒] 缂哄皯鍥剧墖鏂囦欢')
       return NextResponse.json(
         {
           success: false,
-          message: '请上传图片',
+          message: '璇蜂笂浼犲浘鐗?,
           error: 'MISSING_IMAGE'
         },
         { status: 400 }
       )
     }
     
-    console.log(`[图片信息] ${imageFile.name}, ${imageFile.size} bytes, ${imageFile.type}`)
+    console.log(`[鍥剧墖淇℃伅] ${imageFile.name}, ${imageFile.size} bytes, ${imageFile.type}`)
 
     const mockEnabled =
       process.env.MOCK_AI === '1' || process.env.MOCK_AI === 'true'
     if (mockEnabled) {
-      console.log('[Mock AI] 已启用，跳过 Replicate')
+      console.log('[Mock AI] 宸插惎鐢紝璺宠繃 Replicate')
 
-      console.log('[日志] 记录生成记录...')
+      console.log('[鏃ュ織] 璁板綍鐢熸垚璁板綍...')
       const { error: logError } = await supabase
         .from('generation_logs')
         .insert([{ ip }])
 
       if (logError) {
-        console.error('[日志错误]', logError)
+        console.error('[鏃ュ織閿欒]', logError)
       } else {
-        console.log('[日志] 记录成功')
+        console.log('[鏃ュ織] 璁板綍鎴愬姛')
       }
 
       const { data: remainingData } = await supabase
@@ -104,7 +104,7 @@ export async function POST(request: Request) {
         .eq('ip', ip)
         .gte('created_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString())
 
-      const remainingGenerations = 1 - (remainingData?.length || 0)
+      const remainingGenerations = 5 - (remainingData?.length || 0)
       const mockImageUrl = new URL(
         '/watercolor-bunny-in-winter-scene.jpg',
         request.url
@@ -112,7 +112,7 @@ export async function POST(request: Request) {
 
       return NextResponse.json({
         success: true,
-        message: 'Mock 图片生成成功',
+        message: 'Mock 鍥剧墖鐢熸垚鎴愬姛',
         data: {
           imageUrl: mockImageUrl,
           remainingGenerations,
@@ -131,7 +131,7 @@ export async function POST(request: Request) {
     const fileExt = extFromMime[mimeType] || (nameExt === 'jpeg' ? 'jpg' : nameExt) || 'jpg'
     const inputFilename = `inputs/${Date.now()}-${Math.random().toString(36).slice(2, 10)}.${fileExt}`
 
-    console.log('[上传原图] 开始上传到 Supabase:', inputFilename)
+    console.log('[涓婁紶鍘熷浘] 寮€濮嬩笂浼犲埌 Supabase:', inputFilename)
     const { error: inputUploadError } = await supabase
       .storage
       .from('cards')
@@ -141,11 +141,11 @@ export async function POST(request: Request) {
       })
 
     if (inputUploadError) {
-      console.error('[上传原图] 失败:', inputUploadError)
+      console.error('[涓婁紶鍘熷浘] 澶辫触:', inputUploadError)
       return NextResponse.json(
         {
           success: false,
-          message: '原图上传失败',
+          message: '鍘熷浘涓婁紶澶辫触',
           error: inputUploadError.message,
         },
         { status: 500 }
@@ -159,11 +159,11 @@ export async function POST(request: Request) {
     const inputImageUrl = inputUrlData.publicUrl
 
     if (!inputImageUrl) {
-      console.error('[上传原图] 未获取到公开 URL')
+      console.error('[涓婁紶鍘熷浘] 鏈幏鍙栧埌鍏紑 URL')
       return NextResponse.json(
         {
           success: false,
-          message: '原图链接获取失败',
+          message: '鍘熷浘閾炬帴鑾峰彇澶辫触',
           error: 'MISSING_INPUT_URL',
         },
         { status: 500 }
@@ -172,18 +172,18 @@ export async function POST(request: Request) {
     
     const replicateToken = process.env.REPLICATE_API_TOKEN
     if (!replicateToken) {
-      console.error('[配置错误] 缺少 REPLICATE_API_TOKEN')
+      console.error('[閰嶇疆閿欒] 缂哄皯 REPLICATE_API_TOKEN')
       return NextResponse.json(
         {
           success: false,
-          message: '服务器配置错误',
+          message: '鏈嶅姟鍣ㄩ厤缃敊璇?,
           error: 'MISSING_API_TOKEN'
         },
         { status: 500 }
       )
     }
     
-    console.log('[Replicate] 开始调用AI生成...')
+    console.log('[Replicate] 寮€濮嬭皟鐢ˋI鐢熸垚...')
     
     const response = await fetch(
       'https://api.replicate.com/v1/models/black-forest-labs/flux-kontext-pro/predictions',
@@ -211,11 +211,11 @@ export async function POST(request: Request) {
     try {
       prediction = JSON.parse(createBodyText)
     } catch (parseError) {
-      console.error('[Replicate Error] 创建响应不是JSON:', createBodyText)
+      console.error('[Replicate Error] 鍒涘缓鍝嶅簲涓嶆槸JSON:', createBodyText)
       return NextResponse.json(
         {
           success: false,
-          message: 'Replicate响应格式异常',
+          message: 'Replicate鍝嶅簲鏍煎紡寮傚父',
           error: 'REPLICATE_INVALID_RESPONSE',
           details: createBodyText.slice(0, 500),
         },
@@ -223,15 +223,15 @@ export async function POST(request: Request) {
       )
     }
 
-    console.log('[Replicate] 创建响应状态:', response.status)
-    console.log('[Replicate] 预测创建:', prediction?.id)
+    console.log('[Replicate] 鍒涘缓鍝嶅簲鐘舵€?', response.status)
+    console.log('[Replicate] 棰勬祴鍒涘缓:', prediction?.id)
     
     if (!response.ok || prediction?.error) {
       console.error('[Replicate Error]', prediction?.error || prediction)
       return NextResponse.json(
         {
           success: false,
-          message: 'Replicate创建预测失败',
+          message: 'Replicate鍒涘缓棰勬祴澶辫触',
           error: prediction?.error || 'REPLICATE_CREATE_FAILED',
           details: prediction,
         },
@@ -251,57 +251,59 @@ export async function POST(request: Request) {
       )
       
       result = await statusResponse.json()
-      console.log(`[等待结果] ${i * 2}秒, 状态: ${result.status}`)
+      console.log(`[绛夊緟缁撴灉] ${i * 2}绉? 鐘舵€? ${result.status}`)
       
       if (result.status === 'succeeded') {
-        console.log('[Replicate] 生成成功!')
+        console.log('[Replicate] 鐢熸垚鎴愬姛!')
         break
       } else if (result.status === 'failed') {
-        throw new Error(`生成失败: ${result.error}`)
+        throw new Error(`鐢熸垚澶辫触: ${result.error}`)
       }
     }
     
     if (result.status !== 'succeeded') {
-      throw new Error('生成超时')
+      throw new Error('鐢熸垚瓒呮椂')
     }
     
     const output = result.output
     const generatedImageUrl = Array.isArray(output) ? output[0] : output
 
     if (!generatedImageUrl) {
-      throw new Error('生成结果为空')
+      throw new Error('鐢熸垚缁撴灉涓虹┖')
     }
-    console.log('[Replicate] 图片URL:', generatedImageUrl)
+    console.log('[Replicate] 鍥剧墖URL:', generatedImageUrl)
     
-    console.log('[日志] 记录生成记录...')
+    console.log('[鏃ュ織] 璁板綍鐢熸垚璁板綍...')
     const { error: logError } = await supabase
       .from('generation_logs')
       .insert([{ ip }])
     
     if (logError) {
-      console.error('[日志错误]', logError)
+      console.error('[鏃ュ織閿欒]', logError)
     } else {
-      console.log('[日志] 记录成功')
+      console.log('[鏃ュ織] 璁板綍鎴愬姛')
     }
     
     return NextResponse.json({
       success: true,
-      message: '图片生成成功',
+      message: '鍥剧墖鐢熸垚鎴愬姛',
       data: {
         imageUrl: generatedImageUrl,
-        remainingGenerations: 1 - ((await supabase.from('generation_logs').select('*').eq('ip', ip).gte('created_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString())).data?.length || 0)
+        remainingGenerations: 5 - ((await supabase.from('generation_logs').select('*').eq('ip', ip).gte('created_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString())).data?.length || 0)
       }
     })
     
   } catch (error) {
-    console.error('[服务器错误]', error)
+    console.error('[鏈嶅姟鍣ㄩ敊璇痌', error)
     return NextResponse.json(
       {
         success: false,
-        message: '服务器错误',
+        message: '鏈嶅姟鍣ㄩ敊璇?,
         error: error instanceof Error ? error.message : 'UNKNOWN_ERROR'
       },
       { status: 500 }
     )
   }
 }
+
+

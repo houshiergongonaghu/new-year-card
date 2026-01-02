@@ -348,10 +348,10 @@ export default function HolidayCardGenerator() {
                   </div>
                 </CardContent>
               </Card>
-              <div className="mt-6 flex justify-start">
+              <div className="mt-6 hidden lg:flex justify-start">
                 <div className="rounded-2xl bg-white/90 p-3 shadow-lg ring-1 ring-black/5 ml-[150px]">
                   <img
-                    src="/微信图片_20260102181924.jpg"
+                    src="/support-qr.jpg"
                     alt="Support QR code"
                     className="h-[130px] w-[130px] rounded-xl object-cover"
                   />
@@ -467,6 +467,15 @@ export default function HolidayCardGenerator() {
                   )}
                 </CardContent>
               </Card>
+              <div className="mt-6 flex justify-center lg:hidden">
+                <div className="rounded-2xl bg-white/90 p-3 shadow-lg ring-1 ring-black/5">
+                  <img
+                    src="/support-qr.jpg"
+                    alt="Support QR code"
+                    className="h-[160px] w-[160px] rounded-xl object-cover"
+                  />
+                </div>
+              </div>
             </div>
           </div>
         </form>
